@@ -20,7 +20,6 @@ describe('createRequest', () => {
         assert.isNotEmpty(data.data)
         assert.isNumber(data.result)
         assert.isNumber(data.data.result)
-        console.log(JSON.stringify(data, null, 1))
         done()
       })
     })
