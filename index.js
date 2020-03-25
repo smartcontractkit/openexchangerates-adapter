@@ -38,7 +38,6 @@ const requestRetry = (options, retries) => {
 
 const createRequest = (input, callback) => {
   const endpoint = input.data.endpoint || 'latest.json'
-  const amount = input.data.amount || '1'
   const from = input.data.from || 'GBP'
   const to = input.data.to || 'USD'
   const url = `https://openexchangerates.org/api/${endpoint}`
@@ -57,7 +56,7 @@ const createRequest = (input, callback) => {
   }
   requestRetry(options, retries)
     .then(response => {
-      const result = response.body.rates[to] * amount
+      const result = response.body.rates[to]
       response.body.result = result
       callback(response.statusCode, {
         jobRunID: input.id,

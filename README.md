@@ -4,7 +4,6 @@
 - `from`: The currency symbol to convert from
 - `to`: The currency symbol to convert to
 - `endpoint`: The endpoint to use (default: latest.json)
-- `amount`: The amount to convert (default: 1)
 
 
 ## Output
