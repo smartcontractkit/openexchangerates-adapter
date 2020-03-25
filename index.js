@@ -37,14 +37,15 @@ const requestRetry = (options, retries) => {
 }
 
 const createRequest = (input, callback) => {
-  const endpoint = input.data.endpoint || 'convert'
+  const endpoint = input.data.endpoint || 'latest.json'
   const amount = input.data.amount || '1'
   const from = input.data.from || 'GBP'
   const to = input.data.to || 'USD'
-  const url = `https://openexchangerates.org/api/${endpoint}/${amount}/${from}/${to}`
+  const url = `https://openexchangerates.org/api/${endpoint}`
 
   const queryObj = {
-    app_id: process.env.API_KEY
+    app_id: process.env.API_KEY,
+    base: from
   }
 
   const options = {
@@ -56,7 +57,7 @@ const createRequest = (input, callback) => {
   }
   requestRetry(options, retries)
     .then(response => {
-      const result = response.body.response
+      const result = response.body.rates[to] * amount
       response.body.result = result
       callback(response.statusCode, {
         jobRunID: input.id,
