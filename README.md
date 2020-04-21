@@ -1,8 +1,8 @@
 # Chainlink Open Exchange Rates External Adapter
 
 ## Input Params
-- `from`: The currency symbol to convert from
-- `to`: The currency symbol to convert to
+- `base` or `from`: The currency symbol to convert from
+- `quote` or `to`: The currency symbol to convert to
 - `endpoint`: The endpoint to use (default: latest.json)
 
 
@@ -199,7 +199,7 @@
 ## Install
 
 ```bash
-yarn install
+yarn
 ```
 
 ## Test
