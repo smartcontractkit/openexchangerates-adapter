@@ -1,77 +1,46 @@
-const rp = require('request-promise')
-const retries = process.env.RETRIES || 3
-const delay = process.env.RETRY_DELAY || 1000
-const timeout = process.env.TIMEOUT || 1000
+const { Requester, Validator } = require('external-adapter')
 
-const requestRetry = (options, retries) => {
-  return new Promise((resolve, reject) => {
-    const retry = (options, n) => {
-      return rp(options)
-        .then(response => {
-          if (response.body.error) {
-            if (n === 1) {
-              reject(response)
-            } else {
-              setTimeout(() => {
-                retries--
-                retry(options, retries)
-              }, delay)
-            }
-          } else {
-            return resolve(response)
-          }
-        })
-        .catch(error => {
-          if (n === 1) {
-            reject(error)
-          } else {
-            setTimeout(() => {
-              retries--
-              retry(options, retries)
-            }, delay)
-          }
-        })
-    }
-    return retry(options, retries)
-  })
+// Define custom error scenarios for the API.
+// Return true for the adapter to retry.
+const customError = (body) => {
+  return (body.error)
+}
+
+// Define custom parameters to be used by the adapter.
+// Extra parameters can be stated in the extra object,
+// with a Boolean value indicating whether or not they
+// should be required.
+const customParams = {
+  base: ['base', 'from', 'coin', 'fsym'],
+  quote: ['quote', 'to', 'market', 'tsyms'],
+  endpoint: false
 }
 
 const createRequest = (input, callback) => {
-  const endpoint = input.data.endpoint || 'latest.json'
-  const from = input.data.from || 'GBP'
-  const to = input.data.to || 'USD'
+  const validator = new Validator(input, customParams, callback)
+  const jobRunID = validator.validated.id
+  const endpoint = validator.validated.data.endpoint || 'latest.json'
   const url = `https://openexchangerates.org/api/${endpoint}`
+  const base = validator.validated.data.base.toUpperCase()
+  const to = validator.validated.data.quote.toUpperCase()
 
-  const queryObj = {
-    app_id: process.env.API_KEY,
-    base: from
+  const qs = {
+    base,
+    app_id: process.env.API_KEY
   }
 
   const options = {
-    url: url,
-    qs: queryObj,
-    json: true,
-    timeout,
-    resolveWithFullResponse: true
+    url,
+    qs
   }
-  requestRetry(options, retries)
+
+  Requester.requestRetry(options, customError)
     .then(response => {
-      const result = response.body.rates[to]
-      response.body.result = result
-      callback(response.statusCode, {
-        jobRunID: input.id,
-        data: response.body,
-        result,
-        statusCode: response.statusCode
-      })
+      response.body.result = Requester.validateResult(response.body, ['rates', to])
+      callback(response.statusCode, Requester.success(jobRunID, response))
     })
     .catch(error => {
-      callback(error.statusCode, {
-        jobRunID: input.id,
-        status: 'errored',
-        error,
-        statusCode: error.statusCode
-      })
+      callback(500, Requester.errored(jobRunID, error))
     })
 }
 
